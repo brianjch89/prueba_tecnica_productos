@@ -9,8 +9,8 @@ El sistema destaca por su blindaje perimetral en la entrada de datos, consistenc
 ## 1. Manual de Instalación y Configuración
 
 ### 🛠️ Requisitos Técnicos del Entorno
-- **PHP:** Versión 8.2 o superior (Desarrollado y verificado sobre **PHP 8.5.4**).
-- **Gestor de Dependencias:** Composer 2.x (Optimizado bajo **Composer 2.9.3**).
+- **PHP:** Versión 8.5 o superior (Desarrollado y verificado sobre **PHP 8.5.4**).
+- **Gestor de Dependencias:** Composer 2.9 o superior (Optimizado bajo **Composer 2.9.3**).
 - **Motor de Base de Datos:** SQLite 3 (Módulo nativo de PHP activado).
 - **Herramienta de Pruebas:** Postman o utilidades de consumo HTTP equivalentes.
 
