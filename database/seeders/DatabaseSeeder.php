@@ -25,7 +25,6 @@ class DatabaseSeeder extends Seeder
         $this->call([
             CurrencySeeder::class,
             ProductSeeder::class,
-            ProductPriceSeeder::class,
         ]);
     }
 }

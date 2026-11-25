@@ -47,7 +47,7 @@ Ejecute la siguiente secuencia de comandos en su terminal para inicializar, conf
    ```
 
 6. **Ejecutar el set de migraciones y poblar la base de datos (Seeding):**
-   Este comando reestructurará el esquema de tablas desde cero (`currencies`, `products`, `products_prices`) e inyectará de forma coherente registros de prueba simulados con Faker PHP (monedas base, artículos y matrices de precios cruzados):
+   Este comando reestructurará el esquema de tablas desde cero (`currencies`, `products`, `currency_product`) e inyectará de forma coherente registros de prueba simulados con Faker PHP (monedas base, artículos y matrices de precios cruzados):
    ```bash
    php artisan migrate:fresh --seed
    ```
@@ -195,7 +195,7 @@ Esta sección expone los fundamentos de ingeniería de software que justifican e
 
 #### 🟢 Mecanismo de Cascada Manual Transaccional (Integridad Referencial)
 - **Descripción:** Para elevar la seguridad en el manejo de registros financieros y de inventario, se omitió deliberadamente la instrucción `onDelete('cascade')` a nivel físico en los motores de las migraciones. En consecuencia, el control de la integridad referencial se trasladó de la base de datos hacia la capa de software del controlador.
-- **Justificación:** El proceso de borrado coordinado en cascada en el método `destroy()` se encapsuló estrictamente dentro de una transacción atómica mediante `DB::transaction()` soportada por un bloque `try-catch`. Si la consulta de eliminación de la tabla principal (`products`) falla por un bloqueo de concurrencia o un error de E/S, Laravel ejecuta un **Rollback automático** de las filas previamente eliminadas de la tabla pivote (`products_prices`). Esto previene el error crítico de persistencia de dejar registros huérfanos y mitiga excepciones en tiempo de ejecución.
+- **Justificación:** El proceso de borrado coordinado en cascada en el método `destroy()` se encapsuló estrictamente dentro de una transacción atómica mediante `DB::transaction()` soportada por un bloque `try-catch`. Si la consulta de eliminación de la tabla principal (`products`) falla por un bloqueo de concurrencia o un error de E/S, Laravel ejecuta un **Rollback automático** de las filas previamente eliminadas de la tabla pivote (`currency_product`). Esto previene el error crítico de persistencia de dejar registros huérfanos y mitiga excepciones en tiempo de ejecución.
 
 #### 🟢 Abstracción y Casteo de Datos Avanzado (Laravel 13)
 - **Descripción:** Con el fin de flexibilizar la entrada de datos en campos de texto extensos sin corromper el esquema de datos, se aprovechó la arquitectura basada en métodos `casts()` integrada en Laravel 13 en el modelo `Product.php`.

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
-use App\Models\ProductPrice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -38,7 +37,7 @@ class ProductController extends Controller
 
         // Con paginación
         $products = Product::with('currency')
-            ->select('products.*')
+            // ->select('products.*')
             ->orderBy('products.name', 'asc')
             ->paginate($request->paginate);
 
@@ -251,10 +250,9 @@ class ProductController extends Controller
         $product = Product::find($id);
 
         try {
-            DB::transaction(function () use ($id, $product) {
-                // Primero se elimina ese producto asociado a otras divisas en la tabla "products_prices"
-                ProductPrice::where('product_id', (int) $id)
-                    ->delete();
+            DB::transaction(function () use ($product) {
+                // Primero se elimina ese producto asociado a otras divisas en la tabla "currency_product"
+                $product->currencies()->detach();
 
                 // Luego se elimina el producto en sí en la tabla "products"
                 $product->delete();

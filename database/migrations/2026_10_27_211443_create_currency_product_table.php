@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('products_prices', function (Blueprint $table) {
+        Schema::create('currency_product', function (Blueprint $table) {
             $table->id();
 
-            $table->integer('product_id')->unsigned();
-            $table->foreign('product_id')->references('id')->on('products');
+            $table->unsignedBigInteger('currency_id');
+            $table->foreign('currency_id')->references('id')->on('currencies')->onUpdate('cascade');
 
-            $table->integer('currency_id')->unsigned();
-            $table->foreign('currency_id')->references('id')->on('currencies');
+            $table->unsignedBigInteger('product_id');
+            $table->foreign('product_id')->references('id')->on('products')->onUpdate('cascade');
 
             $table->decimal('price', 8, 2);
 
@@ -31,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('products_prices');
+        Schema::dropIfExists('currency_product');
     }
 };

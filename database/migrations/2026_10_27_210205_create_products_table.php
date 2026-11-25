@@ -13,13 +13,12 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('name')->unique();
             $table->string('description')->nullable();
             $table->decimal('price', 8, 2);
 
-            // $table->foreignId('currency_id')->constrained();
-            $table->integer('currency_id')->unsigned();
-            $table->foreign('currency_id')->references('id')->on('currencies');
+            $table->unsignedBigInteger('currency_id');
+            $table->foreign('currency_id')->references('id')->on('currencies')->onUpdate('cascade');
 
             $table->decimal('tax_cost', 8, 2);
             $table->decimal('manufacturing_cost', 8, 2);

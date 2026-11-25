@@ -3,11 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
-use App\Models\ProductPrice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
-class ProductPriceController extends Controller
+class CurrencyProductController extends Controller
 {
 
     public function getPricesByProducts(Request $request, string $id)
@@ -34,24 +33,23 @@ class ProductPriceController extends Controller
             ], 400);
         }
 
-        // $prices = ProductPrice::with(['currency', 'product.currency'])
-        //     ->select('products_prices.*')
-        //     ->join('currencies as c1', 'products_prices.currency_id', '=', 'c1.id')
-        //     ->where('products_prices.product_id', (int) $id)
-        //     ->orderBy('c1.symbol', 'asc')
-        //     ->get();
+        // Se obtiene el producto junto con su divisa base
+        $product = Product::with('currency')->find($id);
 
-        // Con paginación
-        $prices = ProductPrice::with(['currency', 'product.currency'])
-            ->select('products_prices.*') // Evita que los IDs de los joins sobreescriban el ID de "product_prices"
-            ->join('currencies as c1', 'products_prices.currency_id', '=', 'c1.id')
-            ->where('products_prices.product_id', (int) $id)
-            ->orderBy('c1.symbol', 'asc') // Alfabéticamente por el símbolo de la moneda del precio
+        // Se pagina la relación ordenando por el símbolo de la divisa
+        $prices = $product->currencies()
+            ->orderBy('currencies.symbol', 'asc')
             ->paginate($request->paginate);
+
 
         if ($prices->total() === 0) {
             return response()->json([
                 'message' => 'Este producto aún no tiene lista de precios multimoneda asignado.',
+                'base_price' => [
+                    'product_id' => $product->id,
+                    'price'      => (float) $product->price,
+                    'currency'   => $product->currency,
+                ],
                 'data' => []
             ], 200);
         }
@@ -62,7 +60,32 @@ class ProductPriceController extends Controller
             ], 400);
         }
 
+
+        // Se transforma cada registro paginado para darle un formato más limpio
+        $prices->through(function ($currency) use ($product) {
+            return [
+                'id'            => $currency->pivot->id,
+                'product_id'    => $product->id,
+                'currency_id'   => $currency->id,
+                'currency_name' => $currency->name,
+                'symbol'        => $currency->symbol,
+                'exchange_rate' => (float) $currency->exchange_rate,
+                'price'         => (float) $currency->pivot->price,
+                'created_at'    => $currency->pivot->created_at,
+                'updated_at'    => $currency->pivot->updated_at,
+            ];
+        });
+
+        // Se devuelve el precio base aparte y la lista paginada limpia
         return response()->json([
+            'base_price' => [
+                'product_id'    => $product->id,
+                'product_name'  => $product->name,
+                'price'         => (float) $product->price,
+                'currency_id'   => $product->currency->id,
+                'currency_name' => $product->currency->name,
+                'symbol'        => $product->currency->symbol,
+            ],
             'data' => $prices
         ], 200);
     }
@@ -100,41 +123,50 @@ class ProductPriceController extends Controller
             ], 400);
         }
 
-        $productId = (int) $id;
         $currencyId = (int) $request->currency_id;
+        $product = Product::find($id);
 
-        // 1. Se verifica si esa combinación de "product_id" y "currency_id" existe en un registro de la tabla "products_prices"
-        $priceExistsInList = ProductPrice::where('product_id', $productId)
-            ->where('currency_id', $currencyId)
-            ->exists();
-
-        if ($priceExistsInList) {
-            return response()->json([
-                'message' => 'Ya existe un precio registrado para este producto en la divisa seleccionada.'
-            ], 400);
-        }
-
-        // 2. Se verifica si el producto ya tiene una divisa original de nacimiento
-        $productBaseExistInList = Product::where('id', $productId)
-            ->where('currency_id', $currencyId)
-            ->exists();
-
-        if ($productBaseExistInList) {
+        // 1. Se verifica si coincide con la moneda base original del producto
+        if ($product->currency_id === $currencyId) {
             return response()->json([
                 'message' => 'No se puede registrar este precio. La divisa seleccionada coincide con la moneda base original del producto.'
             ], 400);
         }
 
-        // Si supera ambas verificaciones, guardamos de forma 100% segura
-        $ProductPrice = ProductPrice::create([
-            'product_id' => $productId,
-            'currency_id' => $currencyId,
-            'price' => $request->price,
+        // 2. Se verifica si ya existe en la tabla pivote usando la relación
+        $priceExists = $product->currencies()
+            ->where('currency_id', $currencyId)
+            ->exists();
+
+        if ($priceExists) {
+            return response()->json([
+                'message' => 'Ya existe un precio registrado para este producto en la divisa seleccionada.'
+            ], 400);
+        }
+
+        // 3. Se guarda en la tabla pivote usando attach()
+        $product->currencies()->attach($currencyId, [
+            'price' => $request->price
         ]);
+
+        // 4. Se recupera el registro recién creado con su información de divisa y pivote
+        $createdCurrency = $product->currencies()
+            ->where('currency_id', $currencyId)
+            ->first();
 
         return response()->json([
             'message' => '¡Precio multimoneda asignado exitosamente al producto!',
-            'data' => $ProductPrice
+            'data' => [
+                'id'            => $createdCurrency->pivot->id,
+                'product_id'    => $product->id,
+                'currency_id'   => $createdCurrency->id,
+                'currency_name' => $createdCurrency->name,
+                'symbol'        => $createdCurrency->symbol,
+                'exchange_rate' => (float) $createdCurrency->exchange_rate,
+                'price'         => (float) $createdCurrency->pivot->price,
+                'created_at'    => $createdCurrency->pivot->created_at,
+                'updated_at'    => $createdCurrency->pivot->updated_at,
+            ]
         ], 201);
     }
 }

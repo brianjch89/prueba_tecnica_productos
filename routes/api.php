@@ -1,7 +1,7 @@
 <?php
 
+use App\Http\Controllers\CurrencyProductController;
 use App\Http\Controllers\ProductController;
-use App\Http\Controllers\ProductPriceController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -26,9 +26,9 @@ Route::put('/products/{id}', [ProductController::class, 'update']);
 Route::delete('/products/{id}', [ProductController::class, 'destroy']);
 
 
-// TABLA "products_prices"
+// TABLA "currency_product"
 // Obtener lista de precios de un producto
-Route::get('/products/{id}/prices', [ProductPriceController::class, 'getPricesByProducts']);
+Route::get('/products/{id}/prices', [CurrencyProductController::class, 'getPricesByProducts']);
 
 // Crear un nuevo precio para un producto
-Route::post('/products/{id}/prices', [ProductPriceController::class, 'storePriceForAProduct']);
+Route::post('/products/{id}/prices', [CurrencyProductController::class, 'storePriceForAProduct']);
